@@ -1,0 +1,3 @@
+*.pyc
+# Ignore vim temporary files
+*.swp

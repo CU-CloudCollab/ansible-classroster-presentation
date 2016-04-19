@@ -1,0 +1,6 @@
+instance_count: 1
+instance_environment: Dev
+
+# DNS, both cannot be true. DNS only created when instance_count is 1
+create_public_dns_record: false
+create_private_dns_record: false

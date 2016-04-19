@@ -1,0 +1,29 @@
+- name: Stop Instances
+  hosts: all
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Stop EC2 instances
+      local_action:
+        module: ec2
+        region: "{{ aws_region }}"
+        instance_ids: "{{ ec2_id }}"
+        state: stopped
+        wait: true
+      tags:
+        - stop-instance
+
+- name: Start Instances
+  hosts: all
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Start EC2 instances
+      local_action:
+        module: ec2
+        region: "{{ aws_region }}"
+        instance_ids: "{{ ec2_id }}"
+        state: running
+        wait: true
+      tags:
+        - start-instance

@@ -1,0 +1,14 @@
+# http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-initialize.html
+- stat:
+    path: /ebs.initialized
+  register: ebsinit
+
+- name: Initialize root EBS volume
+  command: "fio --filename=/dev/xvda1 --rw=randread --bs=128k --iodepth=32 --ioengine=libaio --direct=1 --name=volume-initialize"
+  when: initialize_ebs == True and (ebsinit.stat.exists is not defined or ebsinit.stat.exists == False)
+
+- name: Record EBS initialization
+  file:
+    path: /ebs.initialized
+    state: touch
+  when: initialize_ebs == True and (ebsinit.stat.exists is not defined or ebsinit.stat.exists == False)

@@ -1,0 +1,9 @@
+web_filesystems:
+  - volume_name: www
+    device: /dev/xvdf
+    mount_point: /www
+    volume_size: "{{ www_volume_size|default('2')}}"
+  - volume_name: log
+    device: /dev/xvdg
+    mount_point: /log
+    volume_size: "{{ log_volume_size|default('2')}}"

@@ -1,0 +1,20 @@
+<IfModule mpm_worker_module>
+    ServerLimit     20
+    StartServers    10
+    MaxClients      250
+    MinSpareThreads 25
+    MaxSpareThreads 75
+    ThreadsPerChild  25
+    MaxRequestsPerChild   10000
+</IfModule>
+
+<IfModule mpm_event_module>
+    ServerLimit     20
+    StartServers    10
+    MaxClients      250
+    MinSpareThreads 25
+    MaxSpareThreads 75
+    ThreadsPerChild  25
+    MaxRequestsPerChild   10000
+</IfModule>
+

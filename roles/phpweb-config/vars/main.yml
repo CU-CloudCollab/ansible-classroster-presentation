@@ -1,0 +1,53 @@
+web_filesystems:
+  www:
+    device: /dev/xvdf
+    mount_point: /www
+  log:
+    device: /dev/xvdg
+    mount_point: /log
+
+pip_libraries:
+
+role_packages:
+  - gcc
+  - mysql
+
+apache_packages:
+  - httpd24
+  - httpd24-devel
+  - httpd24-tools
+  - httpd24-manual
+  - mod24_ssl
+  - apr
+  - apr-util
+
+php_packages:
+  - php56
+  - php56-cli
+  - php56-common
+  - php56-devel
+  - php56-fpm
+  - php56-gd
+  - php56-imap
+  - php56-intl
+  - php56-jsonc
+  - php56-ldap
+  - php56-mbstring
+  - php56-mcrypt
+  - php56-mssql
+  - php56-mysqlnd
+  - php56-odbc
+  - php56-opcache
+  - php56-pdo
+  - php56-pecl-imagick
+  - php56-pecl-memcache
+  - php56-pecl-memcached
+  - php56-pecl-oauth
+  - php56-process
+  - php56-soap
+  - php56-tidy
+  - php56-xml
+  - php56-xmlrpc
+
+php_pecl_extensions:
+  - mongo

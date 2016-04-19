@@ -1,0 +1,259 @@
+- name: Create demo environment AWS resources
+  hosts: localhost
+  connection: local
+  pre_tasks:
+    - name: Get information on any current web instances
+      ec2_remote_facts:
+        region: "{{ aws_region }}"
+        filters:
+          instance-state-name: "stopped"
+          "tag:Environment": "Demo"
+      register: ec2rf
+
+    - name: Start any stopped web instances to avoid re-creating
+      local_action:
+        module: ec2
+        region: "{{ aws_region }}"
+        instance_ids:
+          - "{{ item.id }}"
+        state: running
+        wait: true
+      with_items: "{{ ec2rf.instances }}"
+  roles:
+      # always run our aws-network role, to pick up our security groups
+      - role: aws-network
+
+      - role: phpweb-instance
+        instance_name: web-demo
+        instance_type: t2.nano
+        instance_count: 1
+        instance_environment: "Demo"
+        zone: "{{ aws_zone_pri }}"
+        vpc_subnet_id: "{{ aws_subnet_pri_public }}"
+        create_public_dns_record: false
+        create_private_dns_record: false
+        root_ebs_size: 8
+        www_volume_size: 10
+
+      - role: phpweb-instance
+        instance_name: web-demo
+        instance_type: t2.nano
+        instance_count: 1
+        instance_environment: "Demo"
+        zone: "{{ aws_zone_sec }}"
+        vpc_subnet_id: "{{ aws_subnet_sec_public }}"
+        create_public_dns_record: false
+        create_private_dns_record: false
+        root_ebs_size: 8
+        www_volume_size: 10
+  tasks: []
+  post_tasks: []
+  tags:
+    - provision
+
+# Will return 'unreachable=1' connecting to stopped instances and RDS instances,
+# but continues ok. Hopefully smoother way in future.
+- name: Refresh Dynamic Inventory - Picks Up Newly Created Instances
+  hosts: all
+  tasks:
+    - meta: refresh_inventory
+  tags:
+    - refresh
+
+- name: Configure Environment:demo instances
+  hosts: tag_Name_web_demo
+  remote_user: ec2-user
+  become: True
+  roles:
+    - role: swapfile-config
+      swap_file_size: 2G
+
+    - role: phpweb-config
+      instance_hostname: web-demo.training.cucloud.net
+      # skip because we're not creating true dns entries
+      skip_instance_hostname: true
+      system_packages_update_all: false
+      initialize_ebs: false
+      admin_users: admin_users
+      developer_users: admin_users
+  tags:
+    - configure
+
+- name: Deploy sample web content
+  hosts: tag_Name_web_demo
+  become: yes
+  become_user: classes
+  # serial to allow migrations to complete one at a time
+  serial: 1
+  tasks:
+    - name: Install Guzzlehttp via composer
+      command: /usr/local/bin/composer require guzzlehttp/guzzle chdir=/www/classes/
+
+    - name: Create example PHP script
+      template:
+        src: templates/index.php.j2
+        dest: /www/classes/public/index.php
+
+    - name: kickover httpd
+      become: true
+      become_user: root
+      service:
+        name: httpd
+        state: restarted
+        enabled: yes
+
+    - name: kickover PHP-FPM
+      become: true
+      become_user: root
+      service:
+        name: php-fpm
+        state: restarted
+        enabled: yes
+  tags:
+    - deploy
+
+- name: Create ELB and tag
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Create ELB
+      ec2_elb_lb:
+        name: "web-demo"
+        region: "{{ aws_region }}"
+        state: present
+        security_group_names: 'web-public'
+        # validate backend certs, would expect to want this as No, but Ansible doc is weird
+        #validate_certs: no
+        subnets:
+          - "{{ aws_subnet_pri_public }}"
+          - "{{ aws_subnet_sec_public }}"
+        idle_timeout: 30
+        listeners:
+          - protocol: http
+            load_balancer_port: 80
+            instance_port: 80
+          - protocol: https
+            load_balancer_port: 443
+            instance_port: 443
+            # ACM cert - ssl certificate required for https or ssl
+            ssl_certificate_id: "arn:aws:acm:us-east-1:101334791012:certificate/37069ae3-0065-4aaa-bcc4-3937c47a0b4f"
+        # default by AWS is enabled, but Ansible defaults to disabled. Easy to miss this optimization.
+        cross_az_load_balancing: yes
+        connection_draining_timeout: 60
+        stickiness:
+          # type: application
+          # enabled: yes
+          # cookie: SESSIONID
+          type: loadbalancer
+          enabled: yes
+          expiration: 1200
+        health_check:
+          ping_protocol: https
+          ping_port: 443
+          ping_path: "/"
+          response_timeout: 5 # seconds
+          interval: 15 # seconds
+          unhealthy_threshold: 2
+          healthy_threshold: 2
+#        access_logs:
+#          interval: 60 # minutes (defaults to 60)
+#          s3_location: "bucket-name-here" # This value is required if access_logs is set
+#          s3_prefix: "elb/prefix-here"
+      register: webdemo_elb
+
+    - debug: var=webdemo_elb
+
+    - name: Tag ELB using custom developed ec2_elb_tag module
+      ec2_elb_tag:
+        region: "{{ aws_region }}"
+        name: "web-demo"
+        state: present
+        tags:
+          Environment: Demo
+  tags:
+    - elb
+    - elbcreate
+
+
+- name: Attach instances to ELB
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Get information on any current instances
+      ec2_remote_facts:
+        region: "{{ aws_region }}"
+        filters:
+          instance-state-name: running
+          "tag:Name": "web-demo"
+      register: ec2rf
+
+    - debug: var=ec2rf.instances
+
+    - name: Attach each web server to our ELB
+      ec2_elb:
+        region: "{{ aws_region }}"
+        instance_id: "{{ item.id }}"
+        wait: no
+        ec2_elbs:
+          - "web-demo"
+        state: present
+      with_items: "{{ ec2rf.instances }}"
+  tags:
+    - elb
+    - elbattach
+
+
+# NOTE: until https://github.com/ansible/ansible-modules-extras/issues/1421
+#   is fixed, the health check with multiple path components will fail!
+- name: Create DNS ALIAS entry to ELB
+  hosts: localhost
+  connection: local
+  pre_tasks:
+
+    - name: Get ELB facts
+      ec2_elb_facts:
+        region: "{{ aws_region }}"
+        names:
+        - "{{ load_balancer_name }}"
+      register: elb_facts
+    #- debug: var=elb_facts
+    # NOTE: ELB facts should, but doesnt provide hosted zone id, so doing a trick with AWS cli
+
+    - name: get output from AWS CLI
+      command: "aws elb describe-load-balancers --load-balancer-name {{ load_balancer_name }}  --region {{ aws_region }}"
+      register: commandoutput
+
+    - set_fact:
+        ec2_output: "{{ commandoutput.stdout|from_json }}"
+
+    - debug: var=ec2_output.LoadBalancerDescriptions.0.CanonicalHostedZoneNameID
+
+    - set_fact:
+        hosted_zone_id: "{{ ec2_output.LoadBalancerDescriptions.0.CanonicalHostedZoneNameID }}"
+
+    # NOTE: this doesn't create a dualstack. record, so IPv4 only
+    #       unclear how to get the proper dualstack ZoneId
+    - name: Create ALIAS record to our ELB
+      route53:
+        command: create
+        zone: "{{ aws_dns_zone }}"
+        record: "{{ new_alias_name }}"
+        ttl: 60
+        type: A
+        value: "{{ elb_facts.elbs.0.dns_name }}"
+        alias: True
+        alias_hosted_zone_id: "{{ hosted_zone_id }}"
+        overwrite: true
+        # NOTE: failover records are not yet supported, but likely will be soon..
+        # see PR: https://github.com/ansible/ansible-modules-core/pull/2489
+        # identifier: "failover"
+        # failover: "PRIMARY"
+        # alias_evaluate_target_health: True
+    # FIXME: support for secondary records
+    #- name: Create Alias SECONDARY record
+  vars:
+    load_balancer_name: "web-demo"
+    new_alias_name: "ansible-demo.training.cucloud.net"
+  tags:
+    - elb
+    - elbdns

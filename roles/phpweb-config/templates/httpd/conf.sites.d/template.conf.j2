@@ -1,0 +1,61 @@
+## {{ item.value.comment }}
+
+<VirtualHost *:80>
+  ServerName {{ item.value.servername }}
+  DocumentRoot /www/{{ item.key }}/public
+
+  RewriteEngine On
+  RewriteRule ^/(.*) https://{{ item.value.servername }}/$1 [R=302,QSA,L]
+
+  # Logs
+  ErrorLog /log/httpd/http-{{ item.value.servername }}-error_log
+  CustomLog "/log/httpd/http-{{ item.value.servername }}-access_log" combined env=!forwarded
+  CustomLog "/log/httpd/http-{{ item.value.servername }}-access_log" proxy env=forwarded
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName {{ item.value.servername }}
+    DocumentRoot /www/{{ item.key }}/public
+    SSLEngine on
+
+    # http://serverfault.com/a/672969
+    # This is to forward all PHP to php-fpm.
+    <FilesMatch \.php$>
+        SetHandler "proxy:unix:/www/{{ item.key }}/fpm.socket|fcgi://{{ item.value.servername }}/"
+    </FilesMatch>
+
+    # Set some proxy properties (the string "unique-domain-name-string" should match
+    # the one set in the FilesMatch directive.
+    <Proxy fcgi://{{ item.value.servername }}>
+        ProxySet connectiontimeout=5 timeout=240
+    </Proxy>
+
+    # If the php file doesn't exist, disable the proxy handler.
+    # This will allow .htaccess rewrite rules to work and
+    # the client will see the default 404 page of Apache
+    RewriteCond %{REQUEST_FILENAME} \.php$
+    RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
+    RewriteRule (.*) - [H=text/html]
+
+
+    # problem with this approach is it prevents .htaccess from being read when proxypassmatch matches!
+    # UDS does not yet support reuse
+    #ProxyPassMatch ^/(.*\.php(/.*)?)$ unix:/www/{{ item.key}}/fpm.socket|fcgi://127.0.0.1:9000/www/{{ item.key }}/public/
+    # alternate style would be to use ports - which would be much less secure on the box, but may be more performant
+    #ProxyPassMatch ^/(.*\.php(/.*)?)$ "fcgi://127.0.0.1:{{ item.value.fpm_port}}/www/{{ item.key }}/public/" enablereuse=on
+
+    <Directory /www/{{ item.key }}/public>
+        Options FollowSymLinks
+        AllowOverride all
+        Require all granted
+    </Directory>
+
+    # CUWebAuth
+    #CUWAKeytab /etc/httpd/conf/https.{{ item.value.servername }}.keytab
+    #CUWAKerberosPrincipal https/{{ item.value.servername }}@CIT.CORNELL.EDU
+
+    # Logs
+    ErrorLog /log/httpd/https-{{ item.value.servername }}-error_log
+    CustomLog "/log/httpd/https-{{ item.value.servername }}-access_log" combined env=!forwarded
+    CustomLog "/log/httpd/https-{{ item.value.servername }}-access_log" proxy env=forwarded
+</VirtualHost>

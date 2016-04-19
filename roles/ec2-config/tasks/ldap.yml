@@ -1,0 +1,9 @@
+# allow openldap to trust ssl
+- name: Update ldap.conf cert DIRECTORY
+  lineinfile:
+    dest: /etc/openldap/ldap.conf
+    regexp: "^TLS_CACERTDIR"
+    line: "TLS_CACERTDIR /etc/pki/tls/certs"
+
+- name: Regenerate hash links in directory
+  command: "cacertdir_rehash /etc/pki/tls/certs"

@@ -1,0 +1,9 @@
+# Intentionally not upgrading pip, this caused odd path problem
+# - name: Upgrade pip
+#   command: "/usr/local/bin/pip install --upgrade pip"
+
+- name: Install useful Python libraries
+  pip:
+    name: '{{ item }}'
+  with_items:
+    - "{{ pip_libraries }}"

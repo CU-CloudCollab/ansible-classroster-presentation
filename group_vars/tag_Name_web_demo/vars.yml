@@ -1,0 +1,9 @@
+# every holding id must have a keytab in the s3 ansible bucket
+#   in form https.{{ servername }}.keytab
+# fpm_port is not being used, in favor of unix domain socket approach
+holding_ids:
+  classes:
+    group: classes
+    comment: "Class Roster Demo"
+    fpm_port: 9000
+    servername: ansible-demo.training.cucloud.net

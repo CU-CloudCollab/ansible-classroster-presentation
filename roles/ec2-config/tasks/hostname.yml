@@ -1,0 +1,7 @@
+- fail: msg="Hard fail. This play requires 'instance_hostname'"
+  when: instance_hostname is undefined
+
+- name: Set system hostname
+  hostname:
+    name: "{{ instance_hostname }}"
+  when: skip_instance_hostname is defined and skip_instance_hostname == False

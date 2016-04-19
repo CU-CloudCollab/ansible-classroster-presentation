@@ -1,0 +1,50 @@
+- name: Install PHP packages
+  yum:
+    pkg: '{{ item }}'
+    state: present
+  with_items:
+    - "{{ php_packages }}"
+
+- name: PECL - Channel update
+  command: "pecl channel-update pecl.php.net"
+
+# TODO: Ansible 2.0 will support pear module
+# - name: PHP PECL - Install oci8 extension
+#   pear:
+#     name: pecl/oci8
+#     state: present
+
+# note: cannot use command module because of need to use pipe here
+# taken from https://github.com/geerlingguy/ansible-role-php-pecl
+- name: Manually install PECL libaries.
+  shell: "yes \"\" | pecl install {{ item }}"
+  register: pecl_result
+  changed_when: "pecl_result.rc == 0"
+  failed_when: "not (('already installed' in pecl_result.stdout) or ('install ok:' in pecl_result.stdout))"
+  with_items: "{{ php_pecl_extensions }}"
+
+- name: Copy main php.ini
+  copy:
+    src: php-5.6.ini
+    dest: /etc/php-5.6.ini
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Copy php.d/ custom .ini's
+  copy:
+    src: "{{ item }}"
+    dest: /etc/php.d/
+    owner: root
+    group: root
+    mode: 0644
+  with_fileglob:
+    - php.d/*.ini
+
+- name: Copy main php-fpm-5.6.conf
+  copy:
+    src: php-fpm-5.6.conf
+    dest: /etc/php-fpm-5.6.conf
+    owner: root
+    group: root
+    mode: 0644

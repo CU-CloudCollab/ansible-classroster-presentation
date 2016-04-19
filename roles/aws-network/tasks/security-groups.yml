@@ -1,0 +1,141 @@
+## web public
+- name: Maintain AWS EC2 Security Group for public webservers
+  ec2_group:
+    name: web-public
+    description: public web servers
+    vpc_id: "{{ aws_vpc_id }}"
+    region: "{{ aws_region }}"
+    state: present
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0
+  register: sg_web_public
+
+- debug: var=sg_web_public
+
+## web-campus
+# The addresses are 128.84.0.0, 128.253.0.0, 132.236.0.0, 192.35.82.0, 192.122.235.0, and 192.122.236.0
+# + 10.0.0.0/8
+# http://www.it.cornell.edu/services/netreg/howto/ipaddress.cfm
+- name: Maintain AWS EC2 Security Group for campus web servers
+  ec2_group:
+    name: web-campus
+    description: campus web servers
+    vpc_id: "{{ aws_vpc_id }}"
+    region: "{{ aws_region }}"
+    state: present
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 10.0.0.0/8
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 128.84.0.0/16
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 128.253.0.0/16
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 132.236.0.0/16
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 192.35.82.0/24
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 192.122.235.0/24
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 192.122.236.0/24
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 10.0.0.0/8
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 128.84.0.0/16
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 128.253.0.0/16
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 132.236.0.0/16
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 192.35.82.0/24
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 192.122.235.0/24
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 192.122.236.0/24
+  register: sg_web_campus
+
+## ssh-campus
+- name: Maintain AWS EC2 Security Group for SSH
+  ec2_group:
+    name: ssh-campus
+    description: ssh from campus
+    vpc_id: "{{ aws_vpc_id }}"
+    region: "{{ aws_region }}"
+    state: present
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 10.0.0.0/8
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 128.84.0.0/16
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 128.253.0.0/16
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 132.236.0.0/16
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 192.35.82.0/24
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 192.122.235.0/24
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 192.122.236.0/24
+  register: sg_ssh_campus
+
+- name: Tag our security groups
+  ec2_tag:
+    region: "{{ aws_region }}"
+    resource: "{{ item.group_id }}"
+    state: present
+    tags:
+      Environment: Demo
+  with_items:
+    - "{{ sg_web_public }}"
+    - "{{ sg_web_campus }}"
+    - "{{ sg_ssh_campus }}"

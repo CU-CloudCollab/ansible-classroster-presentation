@@ -1,0 +1,17 @@
+- name: Copy Mongo Repository File
+  copy:
+    src: mongodb-org-3.2.repo
+    dest: /etc/yum.repos.d/mongodb-org-3.2.repo
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install Mongo 3.2 client
+  yum:
+    pkg: mongodb-org-shell.x86_64
+    state: present
+
+- name: Install Mongo 3.2 tools
+  yum:
+    pkg: mongodb-org-tools.x86_64
+    state: present

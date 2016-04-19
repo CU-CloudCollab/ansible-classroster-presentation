@@ -1,0 +1,16 @@
+- name: Copy /etc/sysconfig/clock
+  template:
+    src: ../templates/clock.j2
+    dest: /etc/sysconfig/clock
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Create symlink to timezone
+  file:
+    path: /etc/localtime
+    src: /usr/share/zoneinfo/America/New_York
+    force: yes
+    owner: root
+    group: root
+    state: link

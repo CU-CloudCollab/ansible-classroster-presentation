@@ -1,0 +1,14 @@
+- name: create filesystem on each partition if it doesn't exist
+  filesystem:
+    dev: "{{ item.value.device }}"
+    fstype: ext4
+    force: no
+  with_dict: "{{ web_filesystems }}"
+
+- name: mount filesystems
+  mount:
+    state: mounted
+    name: "{{ item.value.mount_point }}"
+    src: "{{ item.value.device }}"
+    fstype: ext4
+  with_dict: "{{ web_filesystems }}"

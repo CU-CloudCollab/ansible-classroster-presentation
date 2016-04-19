@@ -1,0 +1,81 @@
+# Maintain /www directories
+- name: Maintain /www/holding_id/public directory for each holding id
+  file:
+    path: "/www/{{ item.key }}/public"
+    owner: "{{ item.key }}"
+    group: "{{ item.key }}"
+    state: directory
+    mode: 0755
+    recurse: yes
+  with_dict: "{{ holding_ids }}"
+  ignore_errors: yes
+
+- name: Remove the default "www" pool
+  file:
+    path: /etc/php-fpm.d/www.conf
+    state: absent
+
+# Create php-fpm pools from templates/php-fpm-pool.conf.js into /etc/php-fpm.d/pool-name.conf
+- name: Make FPM pool configuration
+  template:
+    src: php-fpm-pool.conf.j2
+    dest: "/etc/php-fpm.d/{{ item.key }}.conf"
+    owner: "{{ item.key }}"
+    group: "{{ item.key }}"
+    force: yes
+  with_dict: "{{ holding_ids }}"
+  notify:
+    - restart php-fpm
+    - restart httpd
+
+- name: Confirm directory for holding id sites
+  file:
+    path: "/etc/httpd/conf.sites.d"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: Apache config for localhost VirtualHost
+  template:
+    src: httpd/conf.sites.d/localhost.conf.j2
+    dest: "/etc/httpd/conf.sites.d/00-localhost.conf"
+    owner: root
+    group: root
+    force: yes
+  when: localhost_default_site == true
+
+- name: Remove Apache config for local VirtualHost
+  file:
+    path: "/etc/httpd/conf.sites.d/00-localhost.conf"
+    state: absent
+  when: localhost_default_site == false
+
+- name: Maintain /www/holding_id/public directory for each holding id
+  file:
+    path: "/www/localhost/public"
+    owner: "root"
+    group: "root"
+    mode: 0755
+    state: directory
+    recurse: yes
+  when: localhost_default_site == true
+
+- name: Create index.html for localhost VirtualHost
+  template:
+    src: index.html.j2
+    dest: "/www/localhost/public/index.html"
+    owner: "root"
+    group: "root"
+    force: yes
+    mode: 0755
+  when: localhost_default_site == true
+
+- name: Apache config for each holding id
+  template:
+    src: httpd/conf.sites.d/template.conf.j2
+    dest: "/etc/httpd/conf.sites.d/{{ item.key }}.conf"
+    owner: root
+    group: root
+    force: yes
+  with_dict: "{{ holding_ids }}"

@@ -1,0 +1,13 @@
+- name: Create RDS Subnet Group
+  rds_subnet_group:
+    state: present
+    name: mysql-group
+    # documentation doesnt say description is required, but it is
+    description: "RDS-MySQL Subnet Group"
+    region: "{{ aws_region }}"
+    subnets:
+      - "{{ aws_subnet_pri_priv }}"
+      - "{{ aws_subnet_sec_priv }}"
+  register: rds_mysql_subnet_group
+
+#- debug: var=rds_mysql_subnet_group

@@ -1,0 +1,14 @@
+#!/bin/bash
+set -x
+ENV_FILE=/etc/profile.d/classroster-env.sh
+mkdir -p `dirname $ENV_FILE`
+cat << EOF > $ENV_FILE
+#!/bin/bash
+export CLASSROSTER_JOBMANAGER_DISABLED=true
+EOF
+chmod +x $ENV_FILE
+
+# set hostname within new instance
+HOSTNAME=`/usr/bin/curl -s http://169.254.169.254/latest/meta-data/local-hostname`
+hostname $HOSTNAME
+sed -i '2s/.*/HOSTNAME='$HOSTNAME'/' /etc/sysconfig/network

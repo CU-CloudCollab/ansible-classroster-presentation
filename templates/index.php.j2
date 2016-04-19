@@ -1,0 +1,8 @@
+<?php
+require '../vendor/autoload.php';
+
+$client = new GuzzleHttp\Client();
+$res = $client->get('https://classes.cornell.edu/api/2.0/config/rosters.json', []);
+
+header('Content-type: ' . $res->getHeader('content-type'));
+echo $res->getBody();                 // {"type":"User"...'

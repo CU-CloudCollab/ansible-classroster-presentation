@@ -1,0 +1,11 @@
+---
+# defaults file for ec2-config
+
+# should all system packages be updated when role is run
+system_packages_update_all: false
+
+# should the root EBS volume be initialized
+initialize_ebs: false
+
+# should setting of hostname be skipped
+skip_instance_hostname: false

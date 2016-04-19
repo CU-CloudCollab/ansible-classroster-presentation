@@ -1,3 +1,7 @@
 *.pyc
 # Ignore vim temporary files
 *.swp
+# ignore original keynote
+doc/*.key
+# ansible retry
+*.retry

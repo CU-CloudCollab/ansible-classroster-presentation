@@ -1,0 +1,17 @@
+pip_libraries:
+  - boto3
+  - pymongo
+
+system_packages:
+  # to use iostat
+  - sysstat
+  # whois is nice to have
+  - jwhois
+  - expect
+  - openldap-clients
+  - mlocate
+  - gcc
+  - openssl-devel
+  - git
+  # for initializing EBS volumes
+  - fio

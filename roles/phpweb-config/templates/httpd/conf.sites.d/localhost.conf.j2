@@ -1,0 +1,27 @@
+<VirtualHost *:80>
+  DocumentRoot /www/localhost/public
+
+  <Directory /www/localhost/public>
+      Options FollowSymLinks
+      AllowOverride all
+      Require all granted
+  </Directory>
+
+  ErrorLog /log/httpd/http-localhost-error_log
+  CustomLog /log/httpd/http-localhost-access_log combined
+</VirtualHost>
+
+<VirtualHost *:443>
+    DocumentRoot /www/localhost/public
+    SSLEngine on
+
+    <Directory /www/localhost/public>
+        Options FollowSymLinks
+        AllowOverride all
+        Require all granted
+    </Directory>
+
+    # Logs
+    ErrorLog /log/httpd/https-localhost-error_log
+    CustomLog /log/httpd/https-localhost-access_log combined
+</VirtualHost>

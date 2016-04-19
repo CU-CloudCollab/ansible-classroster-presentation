@@ -1,0 +1,102 @@
+- name: Create AMI
+  hosts: localhost
+  tasks:
+    - name: Create AMI based on a specific instance
+      ec2_ami:
+        region: "{{ aws_region }}"
+        instance_id: "{{ source_instance_id }}"
+        name: "{{ ami_name }}"
+        # no (default) to allow reboot
+        no_reboot: no
+        state: present
+        # wait until this ami is created
+        wait: yes
+        wait_timeout: 3600
+        device_mapping:
+            - device_name: /dev/xvda
+              size: 12
+              delete_on_termination: true
+              volume_type: gp2
+            - device_name: /dev/xvdf
+              size: 5
+              delete_on_termination: true
+              volume_type: gp2
+            - device_name: /dev/xvdg
+              size: 5
+              delete_on_termination: true
+              volume_type: gp2
+        tags:
+          Name: demo-test-ami
+          Environment: Demo
+
+    - name: Create a launch config name using prefix and current datetime
+      set_fact:
+        launch_config_name: "{{ launch_config_prefix}}-{{ lookup('pipe', 'date +%Y%m%d%H%M') }}"
+
+    - name: create launch config given a specific AMI
+      ec2_lc:
+        name: "{{ launch_config_name }}"
+        image_id: "{{ image_id }}"
+        key_name: "{{ aws_priv_key }}"
+        region: "{{ aws_region }}"
+        # https://github.com/ansible/ansible-modules-core/issues/1719
+        # if we specify by name, then boto fails about no default VPC
+        #security_groups: ['web-public', 'ssh-limited', 'default']
+        security_groups: ['sg-a257c4c4', 'sg-62cd2e1b', 'sg-4f546528']
+        assign_public_ip: false
+        spot_price: '0.10'
+        instance_type: "c4.large"
+        # could also be the ARN
+        #instance_profile_name: "Webserver"
+        state: present
+        # annoyingly different named vars for mapping vs ec2_ami
+        volumes:
+          - device_name: /dev/xvda
+            device_type: gp2
+            volume_size: 12
+            delete_on_termination: true
+          - device_name: /dev/xvdf
+            device_type: gp2
+            volume_size: 10
+            delete_on_termination: true
+          - device_name: /dev/xvdg
+            device_type: gp2
+            volume_size: 8
+            delete_on_termination: true
+        user_data: "{{ lookup('template', 'templates/web-asg-userdata.j2') }}"
+
+      register: launchconfig
+
+    - debug: var=launchconfig
+
+    - name: Create auto scaling group based on launch config
+      ec2_asg:
+        name: "{{ asg_name }}"
+        health_check_period: 300
+        default_cooldown: 300
+        region: "{{ aws_region }}"
+        load_balancers: "{{ attach_to_elbs }}"
+        availability_zones: [ "{{ aws_zone_sec }}" ]
+        launch_config_name: "{{ launch_config_name }}"
+        min_size: 1
+        max_size: 2
+        desired_capacity: 1
+        # if min-size is 0, cant replace_all_instances: true
+        # if we're changing the launch config, replace_all_instances should be true
+        replace_all_instances: false
+        replace_batch_size: 1
+        vpc_zone_identifier: ["{{ aws_subnet_sec_public }}"]
+        state: present
+        wait_for_instances: false
+        tags:
+          - Environment: Demo
+            Name: 'web-demo'
+            propagate_at_launch: true
+      register: asg
+  vars:
+    source_instance_id: 'i-cbc99f32'
+    ami_name: "demo-test-ami-20160422"
+    image_id: 'ami-894d4ee3'
+    launch_config_prefix: 'ansible-demo-lc'
+    asg_name: "ansible-asg-demo"
+    attach_to_elbs: [ 'web-demo' ]

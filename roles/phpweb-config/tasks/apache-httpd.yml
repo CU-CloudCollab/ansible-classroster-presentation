@@ -1,0 +1,68 @@
+- name: Install apache-httpd packages
+  yum:
+    pkg: '{{ item }}'
+    state: present
+  with_items:
+    - "{{ apache_packages }}"
+
+- name: Maintain main httpd.conf
+  template:
+    src: httpd/conf/httpd.conf.j2
+    dest: /etc/httpd/conf/httpd.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: enable httpd service
+
+- name: Copy conf.d/ templates
+  template:
+    src: "httpd/conf.d/{{ item }}.j2"
+    dest: "/etc/httpd/conf.d/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - autoindex.conf
+    - fcgid.conf
+    - manual.conf
+    - mpm.conf
+    - notrace.conf
+    - ssl.conf
+    - userdir.conf
+    - welcome.conf
+
+# perhaps this should CLEAR conf.modules.d/* remotely and just drop in the ones we want instead?
+- name: Copy conf.modules.d/ templates
+  template:
+    src: "httpd/conf.modules.d/{{ item }}.j2"
+    dest: "/etc/httpd/conf.modules.d/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - 00-base.conf
+    - 00-dav.conf
+    - 00-lua.conf
+    - 00-mpm.conf
+    - 00-optional.conf
+    - 00-proxy.conf
+    - 00-ssl.conf
+    - 01-cgi.conf
+    - 10-php.conf
+
+- name: Create Apache log directory
+  file:
+    path: "/log/httpd"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: Create self-signed SSL cert
+  command: openssl req -new -nodes -x509 -subj "/C=US/ST=NewYork/L=Ithaca/O=IT/CN=localhost" -days 3650 -keyout /etc/httpd/conf/server.key -out /etc/httpd/conf/server.crt
+
+- name: Change httpd logs symlink
+  file:
+    dest: /etc/httpd/logs
+    src: /log/httpd
+    state: link

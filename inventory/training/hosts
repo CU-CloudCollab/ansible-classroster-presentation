@@ -1,0 +1,15 @@
+# Define "static groups"
+[shared-secure]
+[webservers]
+
+# Define our instances as groups otherwise cannot merge thru :children
+[tag_Name_phpweb_dev]
+[tag_Name_phpweb_demo]
+
+# Associate groups to our meta-static groups
+[shared-secure:children]
+tag_Name_phpweb_dev
+
+[phpweb:children]
+tag_Name_phpweb_dev
+tag_Name_phpweb_demo

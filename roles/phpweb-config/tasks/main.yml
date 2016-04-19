@@ -1,0 +1,8 @@
+- include: filesystem.yml
+- include: role-packages.yml
+- include: mongo-client.yml
+- include: apache-httpd.yml
+- include: php.yml
+- include: composer.yml
+- include: holdingids.yml
+- include: sites.yml

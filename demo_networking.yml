@@ -1,0 +1,5 @@
+- name: Maintain network related AWS resources
+  hosts: localhost
+  connection: local
+  roles:
+      - aws-network

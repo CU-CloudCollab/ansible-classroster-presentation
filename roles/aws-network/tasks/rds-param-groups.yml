@@ -1,0 +1,17 @@
+- name: Create MySQL Parameter Group
+  rds_param_group:
+    region: "{{ aws_region }}"
+    state: present
+    # Identifiers must begin with a letter; must contain only ASCII letters, digits, and hyphens;
+    # and must not end with a hyphen or contain two consecutive hyphens.
+    name: 'ssit-mysql56'
+    description: 'Student Services IT Preferred MySQL 5.6 Group'
+    engine: 'mysql5.6'
+    params:
+      time_zone: 'US/Eastern'
+      collation_server: 'utf8_unicode_ci'
+      collation_connection: 'utf8_unicode_ci'
+      collation_database: 'utf8_unicode_ci'
+      character_set_server: 'utf8'
+      character_set_database: 'utf8'
+      event_scheduler: 'ON'

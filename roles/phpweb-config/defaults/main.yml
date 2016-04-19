@@ -1,0 +1,4 @@
+developer_users: []
+
+# whether to create a simple 'Health OK' index.html for default localhost VirtualHost
+localhost_default_site: true

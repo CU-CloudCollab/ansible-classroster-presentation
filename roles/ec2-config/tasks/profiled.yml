@@ -1,0 +1,7 @@
+- name: Set an /etc/profile.d/ssit-friendly.sh for common aliases
+  copy:
+    src: profile.d.ssit-friendly.sh
+    dest: /etc/profile.d/ssit-friendly.sh
+    owner: root
+    group: root
+    mode: 0644

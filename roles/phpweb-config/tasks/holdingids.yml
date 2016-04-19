@@ -1,0 +1,32 @@
+- name: Create 'holdingid' group of which all holdingids will belong
+  group:
+    name: holdingid
+    state: present
+    system: yes
+
+- name: Create each holdingid's individual group
+  group:
+    name: "{{ item.value.group }}"
+    state: present
+    system: yes
+  with_dict: "{{ holding_ids }}"
+
+- name: Create Holding ID users
+  user:
+    name: "{{ item.key }}"
+    comment: "{{ item.value.comment }}"
+    shell: "/bin/bash"
+    createhome: yes
+    group: "{{ item.value.group }}"
+    groups: "{{ item.value.group }},holdingid"
+  with_dict: "{{ holding_ids }}"
+  register: holding_ids_dict
+
+- name: Add each developer_user to each holding_id
+  user:
+    name: "{{ item[0].username }}"
+    groups: "{{ item[1] }}"
+    append: yes
+  with_nested:
+    - "{{ developer_users }}"
+    - "{{ holding_ids }}"

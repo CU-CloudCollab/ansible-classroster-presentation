@@ -1,0 +1,7 @@
+- include: system-packages.yml
+- include: ebsinit.yml
+- include: hostname.yml
+- include: set-clock.yml
+- include: ldap.yml
+- include: python.yml
+- include: profiled.yml

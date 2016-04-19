@@ -1,0 +1,12 @@
+- name: Upgrade all system packages
+  yum:
+    name: '*'
+    state: latest
+  when: system_packages_update_all == true
+
+- name: Install generally useful system packages
+  yum:
+    pkg: '{{ item }}'
+    state: present
+  with_items:
+    - "{{ system_packages }}"

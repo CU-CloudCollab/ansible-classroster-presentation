@@ -1,0 +1,8 @@
+---
+# handlers file for ec2-config
+
+- name: restart sendmail
+  service:
+      name: sendmail
+      state: restarted
+      enabled: yes

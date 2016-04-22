@@ -1,0 +1,33 @@
+# used for tagging
+aws_environment: Demo
+
+# our chosen AWS region
+aws_region: us-east-1
+
+## Networking
+aws_vpc_id: vpc-34b78950
+aws_vpc_cidr: 172.31.0.0/16
+# 1c
+aws_subnet_pri_public: subnet-340bbe1e
+# 1e
+aws_subnet_sec_public: subnet-68255955
+aws_dns_zone: training.cucloud.net
+aws_sg_default: sg-4f59cd37
+
+aws_zone_pri: 'us-east-1c'
+aws_zone_sec: 'us-east-1e'
+
+## Compute
+# N. Virginia - Amazon Linux AMI 2016.03.0 HVM EBS-Backed
+# if were to use instances w/instance store rather than just EBS, would need diff ami
+aws_ami_id: ami-08111162
+# Name of the keypair launched instances should allow
+aws_priv_key: ansible-presentation-emg33
+
+# supports multiple pubkeys...if extra line is added btwn each key
+admin_users:
+  - username: emg33
+    fullname: "Eric Grysko"
+    pubkey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDtIlKbxuJhAClSQz2m3n4qWC7CsTqFszKtojvNPirCS3SMElO2vvTEOIbbsFjxxubzcvnTzUiKUsJQLTcMuEhxbNI3D75JNVJfx/pWk8tjUB92W7mvG+r44L/murAYX7nelW5uHi49RXIe0XUS7N6FDIw90oBDiBWZRv+Gq+94qoB5/2RQo84dEzlXgCbijgWVPM9lrma/eYWvYR1VEm+K4Bmbu7AaoNJssHblFNoO2qJUO4fDWSCHf7PijZhPTDHPxlsV6cXaWlNHfYAfmsnf20iUuB0qt4PGOvygsCe+L/AEMsUkWF5rCxDAS/Zc7WZLSpPkomsxFfP/e89asK/z
+
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC9XexckCma9VESJm7YVCaJstmxed291MZUDiTNUMEkdHBcW+zsf5h/B//jihiGNnQaajAiT39VsmL5R5LUH1HI8DPi0xVmAaZs/2AlaKhseHs7bp1lPoEQvGIFsGv28z337r42jRmq53cI2o4rQKaAdskRI4HKbmhmG7SgbcMXftBj2DWoBECG0rpYU/l9OdR69SEKTckfYxPoUHLEXQJsp+T9bzqfzp7CUN5Nf/ucfjyL6/7OgFHLdE/kyzCOMy8zq+WYLX4B23Z/Rfdb76TOI5BYEy5U3DAAGOzEK+HW7Hu2AsgpFuEtodRbB1wLj61wJYO6PiV/mnO5Ov96W8Vp"
